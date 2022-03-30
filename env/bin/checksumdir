@@ -1,4 +1,4 @@
-#!/Users/hyta/Documents/Project_1/Test/bai_test_1/env/bin/python3.9
+#!/Users/hyta/Documents/Project_1/Test/bai_test_GFT/bai_test_1/env/bin/python3.9
 # EASY-INSTALL-ENTRY-SCRIPT: 'checksumdir==1.1.7','console_scripts','checksumdir'
 import re
 import sys

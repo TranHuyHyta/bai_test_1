@@ -1,4 +1,4 @@
-#!/Users/hyta/Documents/Project_1/Test/bai_test_1/env/bin/python3.9
+#!/Users/hyta/Documents/Project_1/Test/bai_test_GFT/bai_test_1/env/bin/python3.9
 
 # Author: 
 # Contact: grubert@users.sf.net

@@ -1,4 +1,4 @@
-#!/Users/hyta/Documents/Project_1/Test/bai_test_1/env/bin/python3.9
+#!/Users/hyta/Documents/Project_1/Test/bai_test_GFT/bai_test_1/env/bin/python3.9
 
 # $Id: rst2pseudoxml.py 4564 2006-05-21 20:44:42Z wiemann $
 # Author: David Goodger <goodger@python.org>

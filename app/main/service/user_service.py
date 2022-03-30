@@ -7,11 +7,10 @@ from typing import Dict
 
 
 def save_new_user(data: Dict[str, str]):
-    user = User.query.filter_by(email=data['email']).first()
+    user = User.query.filter_by(username=data['username']).first()
     if not user:
         new_user = User(
             public_id=str(uuid.uuid4()),
-            email=data['email'],
             username=data['username'],
             password=data['password'],
             registered_on=datetime.datetime.utcnow()
