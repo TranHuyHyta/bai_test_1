@@ -1,13 +1,14 @@
 
 from .. import db
+import uuid
 
 class Cart(db.Model):
     __tablename__="cart"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    product_id = db.Column(db.String(100), unique=True)
-    quantity = db.Column(db.Integer)
-
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship("User", back_populates="cart")
+    
     def __repr__(self):
         return "Cart: {}".format(self.name)
 

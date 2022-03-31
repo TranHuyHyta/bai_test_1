@@ -1,5 +1,4 @@
 import uuid
-import datetime
 
 from app.main import db
 from app.main.model.user import User
@@ -13,7 +12,6 @@ def save_new_user(data: Dict[str, str]):
             public_id=str(uuid.uuid4()),
             username=data['username'],
             password=data['password'],
-            registered_on=datetime.datetime.utcnow()
         )
         save_changes(new_user)
         return generate_token(new_user)
