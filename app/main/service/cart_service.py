@@ -13,7 +13,7 @@ cart_schema=Cart_Schema()
 cart_item_schema=Cart_Item_Schema()
 
 
-def respond_car(user_id, payment_status=None):
+def respond_cart(user_id, payment_status=None):
     cart = Cart.query.filter_by(user_id=user_id)
     if payment_status:
         cart=cart.filter_by(type=TypeEnum.Order.value).first()
@@ -86,7 +86,7 @@ def save_new_cart(data):
             db.session.commit()
 
             # return data as required
-            return respond_car(user_id), 200
+            return respond_cart(user_id), 200
         else:
             cart_data=Cart()
             cart_data.cart_id=uuid.uuid4()
@@ -107,7 +107,7 @@ def save_new_cart(data):
             save_changes(cart_data)
 
             # return data as required
-            return respond_car(user_id), 200
+            return respond_cart(user_id), 200
 
     return {"message":"Bad request!!!"}, 403
 
@@ -133,13 +133,12 @@ def change_cart_quantity(cart_item_id,data):
 
                 db.session.commit()
                 # return data as required
-                return respond_car(user_id), 200
+                return respond_cart(user_id), 200
 
     return {"message":"Bad request!!!"}, 403
 
 def checkout_cart():
     user_id=Auth.user_cart_by_id(request)
-    print(user_id)
     if user_id:
         cart_data=Cart.query \
             .filter_by(type=TypeEnum.Cart.value) \
@@ -148,13 +147,13 @@ def checkout_cart():
             cart_data.type=TypeEnum.Order.value
             cart_data.payment_status="INIT"
             
-            for itm in cart_data.cart_items:
-                itm.type=TypeEnum.OrderDetail.value
+            for item in cart_data.cart_items:
+                item.type=TypeEnum.OrderDetail.value
                 
             db.session.commit()
 
             # return data as required
-            return respond_car(user_id,"INIT"), 200
+            return respond_cart(user_id,"INIT"), 200
     return {"message":"Bad request!!!"}, 403
 
 def delete_cart_item(cart_item_id):
@@ -162,12 +161,19 @@ def delete_cart_item(cart_item_id):
     if user_id:
         cart = Cart.query.filter_by(user_id=user_id).first()
         if cart:
-            cart_item_id = Cart_Item.query.filter_by(cart_item_id=cart_item_id).first()
-            db.session.delete(cart_item_id)
+            cart_item_id_order = Cart_Item.query.filter_by(cart_item_id=cart_item_id)\
+                .filter_by(type=TypeEnum.OrderDetail.value).first()
+            
+            cart_item_id_cart_item = Cart_Item.query.filter_by(cart_item_id=cart_item_id)\
+                .filter_by(type=TypeEnum.Cart_Item.value).first()
+            if cart_item_id_order:
+                return {"message": "Order item can't be delete"}, 403
+            if cart_item_id_cart_item:
+                db.session.delete(cart_item_id_cart_item)
 
             db.session.commit()
 
-            return respond_car(user_id),200
+            return respond_cart(user_id),200
     return {"message":"Bad request!!!"}, 403
 
 

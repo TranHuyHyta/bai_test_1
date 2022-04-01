@@ -11,7 +11,7 @@ _cart = CartDto.cart
 @api.route('/add')
 class AddCart(Resource):
     @api.expect(_cart, validate=True)
-    @api.response(201,'Cart created')
+    @api.response(200,'Cart created')
     @api.doc("create new cart")
     @token_required
     def post(self):
@@ -21,8 +21,8 @@ class AddCart(Resource):
 
 @api.route('/checkout')
 class Checkout(Resource):
-    @api.response(201,'Cart checkouted')
-    @api.doc("cart checkout")
+    @api.response(200,'Cart checked out')
+    @api.doc("cart check out")
     @token_required
     def post(self):
         return checkout_cart()
