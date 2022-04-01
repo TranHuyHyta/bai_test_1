@@ -21,7 +21,12 @@ class AuthDto:
 class CartDto:
     api = Namespace('cart', description='cart related operations')
     cart = api.model('cart', {
-        'productId': fields.String(required=True, description='id of product'),
-        'quantity': fields.Integer(required=True, description='quantity of product'),
+        'product_id': fields.String(required=True, description='product_id'),
+        'quantity': fields.Integer(required=True, description='quantity'),
     })
 
+class CartItemDto:
+    api = Namespace('cart_item', description='cart item string data to update,delete')
+    cart_item_id = api.model('cart_item_change_qty', {
+        'quantity': fields.Integer(required=True, description='quantity')
+    })

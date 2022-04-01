@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from app.main import db
@@ -9,9 +10,9 @@ def save_new_user(data: Dict[str, str]):
     user = User.query.filter_by(username=data['username']).first()
     if not user:
         new_user = User(
-            public_id=str(uuid.uuid4()),
             username=data['username'],
             password=data['password'],
+            registered_on=datetime.datetime.utcnow()
         )
         save_changes(new_user)
         return generate_token(new_user)
@@ -27,14 +28,14 @@ def get_all_users():
     return User.query.all()
 
 
-def get_a_user(public_id):
-    return User.query.filter_by(public_id=public_id).first()
+def get_a_user(user_id):
+    return User.query.filter_by(user_id=user_id).first()
 
 
 def generate_token(user: User):
     try:
         # generate the auth token
-        auth_token = User.encode_auth_token(user.id)
+        auth_token = User.encode_auth_token(user.user_id)
         response_object = {
             'status': 'success',
             'message': 'Successfully registered.',
