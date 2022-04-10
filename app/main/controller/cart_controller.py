@@ -1,4 +1,5 @@
 from app.main.service.cart_service import checkout_cart, save_new_cart
+from app.main.service.order_service import change_order_status
 from app.main.util.decorator import token_required
 from flask import request
 from flask_restx import Resource
@@ -26,3 +27,11 @@ class Checkout(Resource):
     @token_required
     def post(self):
         return checkout_cart()
+
+@api.route('/updateStatus/<order_id>/<status>')
+class Order(Resource):
+    @api.response(201, 'Order update successfully.')
+    @api.doc('Order update')
+    def post(self,order_id,status):
+        """Update status"""
+        return change_order_status(order_id,status)

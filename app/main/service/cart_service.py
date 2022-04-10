@@ -139,13 +139,16 @@ def change_cart_quantity(cart_item_id,data):
 
 def checkout_cart():
     user_id=Auth.user_cart_by_id(request)
+    print(user_id)
     if user_id:
         cart_data=Cart.query \
             .filter_by(type=TypeEnum.Cart.value) \
             .filter_by(user_id=user_id).first()
+        print(cart_data)
         if cart_data:
             cart_data.type=TypeEnum.Order.value
             cart_data.payment_status="INIT"
+            cart_data.order_id = uuid.uuid4()
             
             for item in cart_data.cart_items:
                 item.type=TypeEnum.OrderDetail.value
@@ -166,6 +169,7 @@ def delete_cart_item(cart_item_id):
             
             cart_item_id_cart_item = Cart_Item.query.filter_by(cart_item_id=cart_item_id)\
                 .filter_by(type=TypeEnum.Cart_Item.value).first()
+
             if cart_item_id_order:
                 return {"message": "Order item can't be delete"}, 403
             if cart_item_id_cart_item:
