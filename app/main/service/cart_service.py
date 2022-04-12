@@ -4,21 +4,18 @@ import uuid
 from app.main import db
 from app.main.model.cart import Cart, Cart_Schema
 from app.main.model.cart_item import Cart_Item, Cart_Item_Schema
+from app.main.model.order import Order, Order_Schema
 from app.main.model.product import Product
-from app.main.model.type_enum import TypeEnum
+from app.main.enum.type_enum import TypeEnum
 from app.main.service.auth_helper import Auth
 from flask import json, request
 
 cart_schema=Cart_Schema()
 cart_item_schema=Cart_Item_Schema()
+order_schema=Order_Schema()
 
-
-def respond_cart(user_id, payment_status=None):
-    cart = Cart.query.filter_by(user_id=user_id)
-    if payment_status:
-        cart=cart.filter_by(type=TypeEnum.Order.value).first()
-    else:
-        cart=cart.first()
+def respond_cart(user_id):
+    cart = Cart.query.filter_by(user_id=user_id).first()
 
     obj = {
         "cart_id" : cart.cart_id,
@@ -34,18 +31,49 @@ def respond_cart(user_id, payment_status=None):
 
     obj["cart_item"]=[json.loads(cart_item_schema.dumps(item)) for item in cart.cart_items]
 
-    if payment_status:
-        obj["order_id"]= cart.order_id
-        obj["payment_status"]=payment_status
+    return obj
+
+def respond_order(user_id):
+    order = Order.query.filter_by(user_id=user_id)
+    order = Order.query.filter_by(user_id=user_id).all()
+    if len(order)>1:
+        last_order = order[-1]
     else:
-        obj["cart_id"]=cart.cart_id
+        last_order = Order.query.filter_by(user_id=user_id).first()
+    obj = {
+        "order_id" : last_order.order_id,
+        "user_id" : last_order.user_id,
+
+        "cart_item": None,
+        "subtotal_ex_tax": 0,
+        "tax_total": 0,
+        "total": 0
+    }
+    obj["subtotal_ex_tax"]=sum(item.subtotal_ex_tax for item in last_order.cart_items)
+    obj["tax_total"]=sum(item.tax_total for item in last_order.cart_items)
+    obj["total"]=sum(item.total for item in last_order.cart_items)
+
+    obj["cart_item"]=[json.loads(cart_item_schema.dumps(item)) for item in last_order.cart_items]
+
+    
+    obj["payment_status"]=last_order.payment_status
 
     return obj
+
+def cart_recalc(user_id):
+    cart= Cart.query.filter_by(user_id=user_id).first()
+    cart_items=Cart_Item.query.filter_by(cart_id=cart.id).all()
+    cart.subtotal_ex_tax = sum(row.subtotal_ex_tax for row in cart_items)
+    cart.tax_total = sum(row.tax_total for row in cart_items)
+    cart.total = sum(row.total for row in cart_items)
+    db.session.commit()
 
 def save_new_cart(data):
     user_id=Auth.user_cart_by_id(request)
     if user_id:
-        cart_data=Cart.query.filter_by(user_id=user_id).first()
+        cart_data=Cart.query \
+            .filter_by(type=TypeEnum.Cart.value) \
+            .filter_by(user_id=user_id).first()
         product=Product.get_product_by_uuid(data.get("product_id"))
         if not product: 
             return {"message":"could not found product with input id!!!"}, 403
@@ -54,23 +82,23 @@ def save_new_cart(data):
             cart_items=Cart_Item.query.filter_by(cart_id=cart_data.id,
             product_id=data.get("product_id")).all()
             if cart_items:
-                for item in cart_items:
-                    tmp=Product.get_product_by_uuid(item.product_id)
-                    quantity=item.quantity + int(data.get("quantity"))
-                    item.quantity = quantity
+                for itm in cart_items:
+                    tmp=Product.get_product_by_uuid(itm.product_id)
+                    quantity=itm.quantity + int(data.get("quantity"))
+                    itm.quantity = quantity
 
                     sub_total=quantity*tmp.price
-                    item.subtotal_ex_tax=sub_total
+                    itm.subtotal_ex_tax=sub_total
 
                     tax_total=(sub_total*10)/100
 
-                    item.tax_total=tax_total
-                    item.total=sub_total+tax_total
+                    itm.tax_total=tax_total
+                    itm.total=sub_total+tax_total
             else:
                 cart_item=Cart_Item()
                 cart_item.cart_id=cart_data.id
 
-                cart_item.product_id=data.get("product_id")
+                cart_item.product_id = data.get("product_id")
                 cart_item.subtotal_ex_tax=int(data.get("quantity"))
 
                 sub_total=int(data.get("quantity"))*product.price
@@ -84,16 +112,17 @@ def save_new_cart(data):
                 db.session.add(cart_item)
 
             db.session.commit()
-
+            cart_recalc(user_id)
             # return data as required
             return respond_cart(user_id), 200
         else:
             cart_data=Cart()
-            cart_data.cart_id=uuid.uuid4()
+            cart_data.cart_uuid=uuid.uuid4()
             cart_data.user_id=user_id
 
             cart_item=Cart_Item()
             cart_item.product_id=data.get("product_id")
+            cart_item.order_product_uuid=data.get("product_id")
 
             sub_total=int(data.get("quantity"))*product.price
             cart_item.subtotal_ex_tax=sub_total
@@ -105,7 +134,7 @@ def save_new_cart(data):
 
             cart_data.cart_items.append(cart_item)
             save_changes(cart_data)
-
+            cart_recalc(user_id)
             # return data as required
             return respond_cart(user_id), 200
 
@@ -137,26 +166,34 @@ def change_cart_quantity(cart_item_id,data):
 
     return {"message":"Bad request!!!"}, 403
 
+
 def checkout_cart():
     user_id=Auth.user_cart_by_id(request)
-    print(user_id)
     if user_id:
-        cart_data=Cart.query \
-            .filter_by(type=TypeEnum.Cart.value) \
-            .filter_by(user_id=user_id).first()
+        cart_data=Cart.query.filter_by(user_id=user_id).first()
         if cart_data:
-            cart_data.type=TypeEnum.Order.value
-            cart_data.payment_status="INIT"
-            cart_data.order_id = uuid.uuid4()
+            order_data= Order()
+
+            order_data.payment_status="INIT"
+            order_data.order_id = str(uuid.uuid4())
+            order_data.user_id = cart_data.user_id
+
+            order_data.subtotal_ex_tax = cart_data.subtotal_ex_tax
+            order_data.tax_total = cart_data.tax_total
+            order_data.total = cart_data.total 
+
+            save_changes(order_data)
             
             for item in cart_data.cart_items:
-                item.type=TypeEnum.OrderDetail.value
-                
+                item.type = TypeEnum.OrderDetail.value
+                item.order_id = order_data.id
+            db.session.delete(cart_data)
             db.session.commit()
-
-            # return data as required
-            return respond_cart(user_id,"INIT"), 200
-    return {"message":"Bad request!!!"}, 403
+            # update cart price
+            return respond_order(user_id), 200
+        else:
+            return {"message" : "No cart data"}, 400
+    return {"message" : "PLease login"}, 403
 
 def delete_cart_item(cart_item_id):
     user_id = Auth.user_cart_by_id(request)

@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: eb7d549fb789
+Revision ID: 77ad93e260b4
 Revises: 
-Create Date: 2022-04-08 17:33:14.210339
+Create Date: 2022-04-12 22:00:53.047810
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'eb7d549fb789'
+revision = '77ad93e260b4'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,14 +21,25 @@ def upgrade():
     op.create_table('cart',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('cart_id', sa.String(length=100), nullable=True),
-    sa.Column('order_id', sa.String(length=100), nullable=True),
     sa.Column('user_id', sa.String(length=100), nullable=True),
     sa.Column('type', sa.String(length=50), nullable=True),
-    sa.Column('payment_status', sa.String(length=100), nullable=True),
+    sa.Column('subtotal_ex_tax', sa.Float(), nullable=True),
+    sa.Column('tax_total', sa.Float(), nullable=True),
+    sa.Column('total', sa.Float(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('cart_id'),
-    sa.UniqueConstraint('order_id'),
     sa.UniqueConstraint('user_id')
+    )
+    op.create_table('order',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('order_id', sa.String(length=100), nullable=True),
+    sa.Column('user_id', sa.String(length=100), nullable=True),
+    sa.Column('subtotal_ex_tax', sa.Float(), nullable=True),
+    sa.Column('tax_total', sa.Float(), nullable=True),
+    sa.Column('total', sa.Float(), nullable=True),
+    sa.Column('payment_status', sa.String(length=100), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('order_id')
     )
     op.create_table('product',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -57,8 +68,10 @@ def upgrade():
     sa.Column('tax_total', sa.Float(), nullable=True),
     sa.Column('total', sa.Float(), nullable=True),
     sa.Column('cart_id', sa.Integer(), nullable=True),
+    sa.Column('order_id', sa.Integer(), nullable=True),
     sa.Column('type', sa.String(length=50), nullable=True),
     sa.ForeignKeyConstraint(['cart_id'], ['cart.id'], ),
+    sa.ForeignKeyConstraint(['order_id'], ['order.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('cart_item_id'),
     sa.UniqueConstraint('product_id')
@@ -71,5 +84,6 @@ def downgrade():
     op.drop_table('cart_item')
     op.drop_table('user')
     op.drop_table('product')
+    op.drop_table('order')
     op.drop_table('cart')
     # ### end Alembic commands ###

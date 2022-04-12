@@ -1,7 +1,7 @@
 import uuid
 from marshmallow import Schema, fields
 
-from app.main.model.type_enum import TypeEnum
+from app.main.enum.type_enum import TypeEnum
 
 from .. import db
 
@@ -20,6 +20,7 @@ class Cart_Item(db.Model):
     total = db.Column(db.Float, nullable=True)
 
     cart_id = db.Column(db.Integer, db.ForeignKey('cart.id'))
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
     type = db.Column(db.String(50), default=lambda:TypeEnum.Cart_Item.value)
 
 class Cart_Item_Schema(Schema):

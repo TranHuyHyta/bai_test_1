@@ -6,8 +6,7 @@ class UserDto:
     api = Namespace('user', description='user related operations')
     user = api.model('user', {
         'username': fields.String(required=True, description='user username'),
-        'password': fields.String(required=True, description='user password'),
-        'user_id': fields.String(description='user Identifier')
+        'password': fields.String(required=True, description='user password')
     })
 
 
