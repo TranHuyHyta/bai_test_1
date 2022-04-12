@@ -35,7 +35,7 @@ def respond_cart(user_id, payment_status=None):
     obj["cart_item"]=[json.loads(cart_item_schema.dumps(item)) for item in cart.cart_items]
 
     if payment_status:
-        obj["order_id"]=cart.cart_id
+        obj["order_id"]= cart.order_id
         obj["payment_status"]=payment_status
     else:
         obj["cart_id"]=cart.cart_id
@@ -144,7 +144,6 @@ def checkout_cart():
         cart_data=Cart.query \
             .filter_by(type=TypeEnum.Cart.value) \
             .filter_by(user_id=user_id).first()
-        print(cart_data)
         if cart_data:
             cart_data.type=TypeEnum.Order.value
             cart_data.payment_status="INIT"
